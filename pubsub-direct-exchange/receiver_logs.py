@@ -5,24 +5,9 @@ def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='0.0.0.0', port=5672))
     channel = connection.channel()
     channel.exchange_declare(
-        exchange='logs',  # exchange name
-        exchange_type='fanout'  # broadcasts all the messages it receives to all the queues it knows
+        exchange='direct_logs',
+        exchange_type='direct'  # broadcasts all the messages by routing key
     )
-
-    # class ExchangeType(str, Enum):
-    #     direct = 'direct'
-    #     fanout = 'fanout'
-    #     headers = 'headers'
-    #     topic = 'topic'
-
-    # docker exec -it rabbitmq-learn rabbitmqctl list_exchanges
-    # amq.headers - Headers
-    # amq.rabbitmq.trace - Topic
-    # amq.direct - Direct
-    # amq.fanout - Fanout
-    # logs - Fanout
-    # amq.topic - Topic
-    # amq.match - Headers
 
     result = channel.queue_declare(queue='', exclusive=True)
     queue_name = result.method.queue
