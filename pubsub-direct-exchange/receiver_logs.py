@@ -6,24 +6,39 @@ def main():
     channel = connection.channel()
     channel.exchange_declare(
         exchange='direct_logs',
-        exchange_type='direct'  # broadcasts all the messages by routing key
+        exchange_type='direct',  # broadcasts all the messages by routing key
     )
 
-    result = channel.queue_declare(queue='', exclusive=True)
-    queue_name = result.method.queue
+    errors = channel.queue_declare(queue='', exclusive=True)
+    errors_queue_name = errors.method.queue
+
+    other = channel.queue_declare(queue='', exclusive=True)
+    other_queue_name = other.method.queue
     # we need a fresh, empty queue, because we dont want to send historical logs
     # if queue name is "" Rabbit will generate random name.
     # exclusive=True will delete the queue after connection closes
+    for severity in ['info', 'warning']:
+        channel.queue_bind(
+            exchange='direct_logs',
+            queue=other_queue_name,  # broadcasts all the messages by routing key
+            routing_key=severity,  # routing key is the severity of the log message
+        )
 
-    channel.queue_bind(exchange='logs', queue=queue_name)
-    # docker exec -it rabbitmq-learn rabbitmqctl list_bindings
-    # exchange                amq.gen-TMiv0_-jrzioOedebSuJzA  queue   amq.gen-TMiv0_-jrzioOedebSuJzA      []
-    # logs    exchange        amq.gen-TMiv0_-jrzioOedebSuJzA  queue   amq.gen-TMiv0_-jrzioOedebSuJzA      []
+    channel.queue_bind(
+        exchange='direct_logs',
+        queue=errors_queue_name,  # broadcasts all the messages by routing key
+        routing_key="error",  # routing key is the severity of the log message
+    )
 
-    def callback(ch, method, properties, body):
-        print(" [x] Modified by receiver 1 %r" % body)
+    def other_logs(ch, method, properties, body):
+        print("Not critical logs: %r" % body)
 
-    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+    def error_logs(ch, method, properties, body):
+        print("Error logs: %r" % body)
+
+    channel.basic_consume(queue=other_queue_name, on_message_callback=other_logs, auto_ack=True)
+    channel.basic_consume(queue=errors_queue_name, on_message_callback=error_logs, auto_ack=True)
+
     channel.start_consuming()
 
 
