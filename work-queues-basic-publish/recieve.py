@@ -36,7 +36,10 @@ def main():
     channel.basic_consume(queue='task-per', on_message_callback=task_callback)
 
     # set prefetch_count so then one worker does not take a bulk of all tasks.
-    channel.basic_qos(prefetch_count=1)
+    # basic quality of service fare dispatch mechanism
+    channel.basic_qos(prefetch_count=1)  # Specifies a prefetch window in terms of whole messages
+    # bool global_qos:    Should the QoS apply to all channels on the  connection.
+    # int prefetch_size:  This field specifies the prefetch window size
 
     channel.start_consuming()
 

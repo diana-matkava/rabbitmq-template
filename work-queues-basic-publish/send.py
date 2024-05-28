@@ -10,7 +10,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost')) as connection:
+        pika.ConnectionParameters(host='localhost')
+    ) as connection:
+
         channel = connection.channel()
 
         if args.do == 'send_message':
@@ -32,3 +34,7 @@ if __name__ == '__main__':
                 )
             )
             print("Send Task")
+
+
+
+
